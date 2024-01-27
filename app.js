@@ -59,7 +59,7 @@ const html = `
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      width: 500px;
+      width: 90%;
     }
     #user-list {
       padding: 10px;
