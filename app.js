@@ -60,6 +60,7 @@ const html = `
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       width: 90%;
+      max-width:99%;
     }
     #user-list {
       padding: 10px;
