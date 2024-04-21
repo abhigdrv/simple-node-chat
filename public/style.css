@@ -13,6 +13,16 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+@media only screen and (max-width: 767px) {
+    .container {
+        height: 100vh;
+        margin: 0;
+    }
+    .chat-box{
+        height: 70vh !important;
+    }
+  }
+
 .header {
     padding: 20px;
     border-bottom: 1px solid #ccc;
