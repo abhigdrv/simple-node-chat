@@ -19,11 +19,21 @@ io.on('connection', (socket) => {
     delete users[socket.id];
     io.emit('userList', Object.values(users));
   });
-  socket.on('chat message', (msg) => {
-    const username = users[socket.id] || 'Anonymous';
-    io.emit('chat message', { username, msg });
+  socket.on('chat message', (data) => {
+    const { to, msg } = data;
+    const from = users[socket.id] || 'Anonymous';
+    const sendTo = getKeyByValue(users, to);
+    if (sendTo && users[sendTo]) {
+      io.to(sendTo).emit('private message', { from, msg });
+    } else {
+      io.emit('group message', { from, msg });
+    }
   });
 });
+
+function getKeyByValue(object, value) {
+  return Object.keys(object).find(key => object[key] === value);
+}
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));

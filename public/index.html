@@ -13,15 +13,17 @@
   <div class="container">
     <div class="header">
       <div style="margin-bottom: 10px;">
-        <span style="float: left; font-family: monospace; font-weight: 600;">Flash Chat</span>
-        <span onclick="openNav()"
-          style="background-color: rgb(86, 86, 231); color: white; padding: 4px 10px; border-radius: 6px; float:right; margin-top: -10px; cursor: pointer; font-family: monospace; font-weight: 600;">☰
+        <span style="float: left; font-family: monospace; font-weight: 600;">Flash Chat </span>
+          <span id="recipient-input" style="font-family: monospace; font-weight: 600; background-color: rgb(69, 63, 233); padding: 2px 5px; border-radius: 4px; color: white;margin-left: 5px; margin-right: 5px;" id="current-user"></span>
+          You: <span style="font-family: monospace; font-weight: 600; background-color: green; padding: 2px 5px; border-radius: 4px; color: white;margin-right: 15px;" id="current-user"></span>
+          <span onclick="openNav()"
+          style="background-color: rgb(86, 86, 231); color: white; padding: 4px 10px; border-radius: 6px; float:right; margin-top: -5px; cursor: pointer; font-family: monospace; font-weight: 600;">☰
           Online Users</span>
       </div>
     </div>
     <div id="mySidenav" class="sidenav">
       <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-      <p style="background-color: #777; padding: 10px; cursor: pointer; margin-bottom: 2px; color: white;">Group Chat</p>
+      <p style="background-color: #777; padding: 10px; cursor: pointer; margin-bottom: 2px; color: white;" onclick="setRecipient(''); closeNav();">Group Chat</p>
       <ul id="user-list" style="color: white; list-style-type: none; padding: 0; margin: 0;">
       </ul>
     </div>
@@ -30,7 +32,6 @@
       <span class="letter-icon">&#9993;</span>
       <input type="text" id="message-input" placeholder="Type your message..." style="display: none;">
       <button id="send-btn" style="display: none;" onclick="sendMessage()">Send</button>
-
       <input type="text" id="username-input" placeholder="Type your username...">
       <button id="login-btn" onclick="setUsername()">Login</button>
     </div>
@@ -61,46 +62,94 @@
       const sendButton = document.getElementById('send-btn');
       const randomNumber = Math.floor(Math.random() * 900) + 100;
       const username = usernameInput.value.trim() + "_" + randomNumber;
+      const currentUser = document.getElementById('current-user');
       if (username !== '') {
         socket.emit('setUsername', username);
         usernameInput.style.display = 'none';
         messageInput.style.display = 'block';
         setButton.style.display = 'none';
         sendButton.style.display = 'block';
+        currentUser.textContent = username;
       }
+    }
+
+    function setRecipient(val){
+      const recipientInput = document.getElementById('recipient-input');
+      recipientInput.textContent = val;
     }
 
     function sendMessage() {
       const messageInput = document.getElementById('message-input');
+      const recipientInput = document.getElementById('recipient-input');
+      const recipient = recipientInput.textContent.trim();
       const message = messageInput.value.trim();
       if (message !== '') {
-        socket.emit('chat message', message);
+        if(recipient){
+          const currentUser = document.getElementById('current-user');
+          let data = {
+            from:currentUser.textContent,
+            msg:message
+          }
+          handlePrivate(data)
+        }
+        socket.emit('chat message', { to: recipient, msg: message });
         messageInput.value = '';
       }
     }
 
-    socket.on('userList', (users) => {
-      const userList = document.getElementById('user-list');
-      userList.innerHTML = ''
-      users.forEach((user) => {
-        const listItem = document.createElement('li');
-        listItem.style.backgroundColor = '#555';
-        listItem.style.padding = '10px';
-        listItem.style.cursor = 'pointer';
-        listItem.style.marginBottom = '2px';
-        listItem.textContent = user;
-        userList.appendChild(listItem);
-      });
-    });
-
-    socket.on('chat message', (data) => {
+    function handlePrivate(data){
       const chatBox = document.getElementById('chat-box');
       const messageElement = document.createElement('p');
-      messageElement.style.backgroundColor = generateColorHash(data.username);
-      messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
+      messageElement.style.backgroundColor = generateColorHash(data.from);
+      messageElement.innerHTML = `<strong>${data.from.slice(0, -4)}(p):</strong> ${data.msg}`;
       chatBox.appendChild(messageElement);
-      chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    socket.on('userList', (users) => {
+      const userList = document.getElementById('user-list');
+      const currentUser = document.getElementById('current-user');
+      userList.innerHTML = ''
+      users.forEach((user) => {
+        if(currentUser.textContent !== user){
+          const listItem = document.createElement('li');
+          listItem.style.padding = '10px';
+          listItem.style.cursor = 'pointer';
+          listItem.style.marginBottom = '2px';
+          listItem.textContent = user;
+          listItem.addEventListener('click', function() {
+            setRecipient(this.textContent);
+            users.forEach((u) => {
+              const list = document.querySelector(`#user-list li`);
+              list.style.backgroundColor = '#555';
+              list.style.color = '#fff';
+            });
+            this.style.backgroundColor = '#fff';
+            this.style.color = '#000';
+            openNav();
+          });
+          userList.appendChild(listItem);
+        }
+      });
     });
+    socket.on('group message', (data) => {
+      const chatBox = document.getElementById('chat-box');
+      const messageElement = document.createElement('p');
+      messageElement.style.backgroundColor = generateColorHash(data.from);
+      messageElement.innerHTML = `<strong>${data.from.slice(0, -4)}:</strong> ${data.msg}`;
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    socket.on('private message', (data) => {
+      const chatBox = document.getElementById('chat-box');
+      const messageElement = document.createElement('p');
+      messageElement.style.backgroundColor = generateColorHash(data.from);
+      messageElement.innerHTML = `<strong>P: ${data.from.slice(0, -4)}(p):</strong> ${data.msg}`;
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
     function generateColorHash(name) {
       let hashCode = 0;
       for (let i = 0; i < name.length; i++) {
