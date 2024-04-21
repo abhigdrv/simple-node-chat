@@ -146,7 +146,7 @@
       const chatBox = document.getElementById('chat-box');
       const messageElement = document.createElement('p');
       messageElement.style.backgroundColor = generateColorHash(data.from);
-      messageElement.innerHTML = `<strong>P: ${data.from.slice(0, -4)}(p):</strong> ${data.msg}`;
+      messageElement.innerHTML = `<strong>${data.from.slice(0, -4)}(p):</strong> ${data.msg}`;
       chatBox.appendChild(messageElement);
       chatBox.scrollTop = chatBox.scrollHeight;
     });
