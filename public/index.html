@@ -4,8 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat App</title>
+  <title>FLASH CHAT PRO</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="./falsh.png">
 </head>
 
 <body>
@@ -20,8 +21,8 @@
     </div>
     <div id="mySidenav" class="sidenav">
       <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+      <p style="background-color: #777; padding: 10px; cursor: pointer; margin-bottom: 2px; color: white;">Group Chat</p>
       <ul id="user-list" style="color: white; list-style-type: none; padding: 0; margin: 0;">
-        <li style="background-color: #777; padding: 10px; cursor: pointer; margin-bottom: 2px;">Group Chat</li>
       </ul>
     </div>
     <div class="chat-box" id="chat-box"></div>
@@ -80,6 +81,7 @@
 
     socket.on('userList', (users) => {
       const userList = document.getElementById('user-list');
+      userList.innerHTML = ''
       users.forEach((user) => {
         const listItem = document.createElement('li');
         listItem.style.backgroundColor = '#555';
@@ -94,7 +96,6 @@
     socket.on('chat message', (data) => {
       const chatBox = document.getElementById('chat-box');
       const messageElement = document.createElement('p');
-      console.log(generateColorHash(data.username));
       messageElement.style.backgroundColor = generateColorHash(data.username);
       messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
       chatBox.appendChild(messageElement);
@@ -116,7 +117,11 @@
   </script>
   <script>
     function openNav() {
-      document.getElementById("mySidenav").style.width = "250px";
+      if(document.getElementById("mySidenav").style.width == "250px"){
+        closeNav()
+      }else{
+        document.getElementById("mySidenav").style.width = "250px";
+      }
     }
     function closeNav() {
       document.getElementById("mySidenav").style.width = "0";
