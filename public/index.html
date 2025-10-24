@@ -1,154 +1,377 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FLASH CHAT PRO</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" type="image/png" href="./falsh.png">
-</head>
+  <!-- Primary Meta Tags -->
+  <title>Flash Chat Pro - Anonymous Private Chat | No Registration Required</title>
+  <meta name="title" content="Flash Chat Pro - Anonymous Private Chat | No Registration Required">
+  <meta name="description" content="100% anonymous private chat. No sign-up, no data saved, no tracking. Instant secure messaging for adults. Start chatting privately in seconds without registration.">
+  <meta name="keywords" content="anonymous chat, private chat, no registration chat, secure messaging, adult chat, temporary chat, ephemeral messaging, private conversation, no login chat, anonymous messaging">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+  <meta name="author" content="Flash Chat">
 
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://yourwebsite.com/">
+  <meta property="og:title" content="Flash Chat Pro - Anonymous Private Chat">
+  <meta property="og:description" content="100% anonymous chat. No sign-up, no data saved. Instant secure messaging.">
+  <meta property="og:image" content="https://yourwebsite.com/og-image.jpg">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://yourwebsite.com/">
+  <meta property="twitter:title" content="Flash Chat Pro - Anonymous Private Chat">
+  <meta property="twitter:description" content="100% anonymous chat. No sign-up, no data saved. Instant secure messaging.">
+  <meta property="twitter:image" content="https://yourwebsite.com/twitter-image.jpg">
+  
+  <!-- Security & Privacy -->
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="./flash.png">
+  <link rel="apple-touch-icon" href="./flash.png">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://renthomo.com/">
+
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
   <div class="container">
+    <div style="background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: white; padding: 8px 20px; text-align: center; font-size: 13px; font-weight: 600;">
+  🔒 100% Anonymous • No Data Stored • No Registration • Secure & Private
+</div>
     <div class="header">
-      <div style="margin-bottom: 10px;">
-        <span style="float: left; font-family: monospace; font-weight: 600;">Flash Chat </span>
-          <span id="recipient-input" style="font-family: monospace; font-weight: 600; background-color: rgb(69, 63, 233); padding: 2px 5px; border-radius: 4px; color: white;margin-left: 5px; margin-right: 5px;width: 38px;
-          display: inline-block;overflow: hidden;" id="current-user"></span>
-          You: <span style="font-family: monospace; font-weight: 600; background-color: green; padding: 2px 5px; border-radius: 4px; color: white;margin-right: 15px;width: 38px;
-          display: inline-block;overflow: hidden;" id="current-user"></span>
-          <span onclick="openNav()"
-          style="background-color: rgb(86, 86, 231); color: white; padding: 4px 10px; border-radius: 6px; float:right; margin-top: -5px; cursor: pointer; font-family: monospace; font-weight: 600;">☰</span>
+      <div class="header-left">
+        <div class="app-title">⚡ Flash Chat</div>
+        <div class="chat-mode" id="chat-mode">
+          <div class="mode-indicator"></div>
+          <span id="mode-text">Group Chat</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="user-badge" id="current-user-badge" style="display: none;">
+          <span>👤</span>
+          <span id="current-user"></span>
+        </div>
+        <button class="menu-btn" onclick="openNav()">☰</button>
       </div>
     </div>
+
     <div id="mySidenav" class="sidenav">
       <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-      <p style="background-color: #777; padding: 10px; cursor: pointer; margin-bottom: 2px; color: white;" onclick="setRecipient(''); closeNav();">Group Chat</p>
-      <ul id="user-list" style="color: white; list-style-type: none; padding: 0; margin: 0;">
-      </ul>
+      <button class="logout-btn" id="logout-btn" style="display: none;" onclick="logout()">Logout</button>
+      <div class="sidenav-header">Active Users</div>
+      <div class="group-chat-btn" onclick="setRecipient(''); closeNav();">
+        💬 Group Chat
+      </div>
+      <ul id="user-list"></ul>
+      <div class="session-info">
+        💾 Messages saved for this session
+      </div>
     </div>
-    <div class="chat-box" id="chat-box"></div>
+
+    <div class="chat-box" id="chat-box">
+      <div class="welcome-screen">
+        <div class="welcome-title">Welcome to Flash Chat! 👋</div>
+        <div class="welcome-subtitle">Enter your username below to start chatting</div>
+      </div>
+    </div>
+
     <div class="input-box">
-      <span class="letter-icon">&#9993;</span>
+      <input type="text" id="username-input" placeholder="Enter your username...">
+      <button id="login-btn" onclick="setUsername()">Join Chat</button>
       <input type="text" id="message-input" placeholder="Type your message..." style="display: none;">
       <button id="send-btn" style="display: none;" onclick="sendMessage()">Send</button>
-      <input type="text" id="username-input" placeholder="Type your username...">
-      <button id="login-btn" onclick="setUsername()">Login</button>
     </div>
+
+    <div style="background: #f1f5f9; padding: 15px 25px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+  <p style="margin-bottom: 8px;">🔞 <strong>18+ Only</strong> | By using this service, you confirm you are 18 years or older</p>
+  <p style="margin: 0;">No messages are stored on servers. Messages exist only in your browser session. We do not monitor, record, or store any chat content. Users are responsible for their own conduct.</p>
+  <p style="margin-top: 8px;"><a href="/terms" style="color: #667eea; text-decoration: none; margin: 0 10px;">Terms of Service</a> | <a href="/privacy" style="color: #667eea; text-decoration: none; margin: 0 10px;">Privacy Policy</a></p>
+</div>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
+    const socket = io();
+    let currentRecipient = '';
+    let currentUsername = '';
+    let chatMessages = {
+      group: [],
+      private: {}
+    };
+
+    // Storage keys
+    const STORAGE_KEYS = {
+      USERNAME: 'flashchat_username',
+      MESSAGES: 'flashchat_messages',
+      RECIPIENT: 'flashchat_recipient'
+    };
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFromStorage();
+      checkAutoLogin();
+    });
+
+    // Save messages to sessionStorage whenever they change
+    function saveMessagesToSession() {
+      try {
+        sessionStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(chatMessages));
+        sessionStorage.setItem(STORAGE_KEYS.RECIPIENT, currentRecipient);
+      } catch (e) {
+        console.error('Error saving to sessionStorage:', e);
+      }
+    }
+
+    // Load messages from sessionStorage
+    function loadFromStorage() {
+      try {
+        const savedMessages = sessionStorage.getItem(STORAGE_KEYS.MESSAGES);
+        const savedRecipient = sessionStorage.getItem(STORAGE_KEYS.RECIPIENT);
+        
+        if (savedMessages) {
+          chatMessages = JSON.parse(savedMessages);
+        }
+        
+        if (savedRecipient) {
+          currentRecipient = savedRecipient;
+        }
+      } catch (e) {
+        console.error('Error loading from sessionStorage:', e);
+      }
+    }
+
+    // Check if user was previously logged in
+    function checkAutoLogin() {
+      const savedUsername = localStorage.getItem(STORAGE_KEYS.USERNAME);
+      
+      if (savedUsername) {
+        currentUsername = savedUsername;
+        autoLogin(savedUsername);
+      }
+    }
+
+    // Auto login with saved username
+    function autoLogin(username) {
+      const usernameInput = document.getElementById('username-input');
+      const messageInput = document.getElementById('message-input');
+      const setButton = document.getElementById('login-btn');
+      const sendButton = document.getElementById('send-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+      const currentUser = document.getElementById('current-user');
+      const currentUserBadge = document.getElementById('current-user-badge');
+
+      socket.emit('setUsername', username);
+      usernameInput.style.display = 'none';
+      messageInput.style.display = 'block';
+      setButton.style.display = 'none';
+      sendButton.style.display = 'block';
+      logoutBtn.style.display = 'block';
+      currentUser.textContent = username;
+      currentUserBadge.style.display = 'flex';
+      
+      document.getElementById('chat-box').innerHTML = '';
+      
+      // Restore chat view
+      if (currentRecipient === '') {
+        displayMessages('group');
+      } else {
+        setRecipient(currentRecipient);
+      }
+    }
+
+    // Logout function
+    function logout() {
+      if (confirm('Are you sure you want to logout? Your messages will be cleared.')) {
+        localStorage.removeItem(STORAGE_KEYS.USERNAME);
+        sessionStorage.removeItem(STORAGE_KEYS.MESSAGES);
+        sessionStorage.removeItem(STORAGE_KEYS.RECIPIENT);
+        location.reload();
+      }
+    }
+
     document.getElementById("message-input").addEventListener("keypress", function (event) {
       if (event.key === "Enter") {
         event.preventDefault();
         document.getElementById("send-btn").click();
       }
     });
+
     document.getElementById("username-input").addEventListener("keypress", function (event) {
       if (event.key === "Enter") {
         event.preventDefault();
         document.getElementById("login-btn").click();
       }
     });
-  </script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-  <script>
-    const socket = io();
+
     function setUsername() {
       const usernameInput = document.getElementById('username-input');
       const messageInput = document.getElementById('message-input');
       const setButton = document.getElementById('login-btn');
       const sendButton = document.getElementById('send-btn');
+      const logoutBtn = document.getElementById('logout-btn');
       const randomNumber = Math.floor(Math.random() * 900) + 100;
       const username = usernameInput.value.trim() + "_" + randomNumber;
       const currentUser = document.getElementById('current-user');
-      if (username !== '') {
+      const currentUserBadge = document.getElementById('current-user-badge');
+
+      if (usernameInput.value.trim() !== '') {
+        currentUsername = username;
+        
+        // Save username to localStorage
+        localStorage.setItem(STORAGE_KEYS.USERNAME, username);
+        
         socket.emit('setUsername', username);
         usernameInput.style.display = 'none';
         messageInput.style.display = 'block';
         setButton.style.display = 'none';
         sendButton.style.display = 'block';
+        logoutBtn.style.display = 'block';
         currentUser.textContent = username;
+        currentUserBadge.style.display = 'flex';
+        
+        document.getElementById('chat-box').innerHTML = '';
       }
     }
 
-    function setRecipient(val){
-      const recipientInput = document.getElementById('recipient-input');
-      recipientInput.textContent = val;
+    function setRecipient(val) {
+      currentRecipient = val;
+      const modeText = document.getElementById('mode-text');
+      
+      if (val === '') {
+        modeText.textContent = 'Group Chat';
+        displayMessages('group');
+      } else {
+        modeText.textContent = `Chat with ${val.slice(0, -4)}`;
+        if (!chatMessages.private[val]) {
+          chatMessages.private[val] = [];
+        }
+        displayMessages('private', val);
+      }
+
+      // Save current recipient
+      saveMessagesToSession();
+
+      document.querySelectorAll('#user-list li').forEach(li => {
+        li.classList.remove('active');
+        if (li.textContent === val) {
+          li.classList.add('active');
+        }
+      });
     }
 
     function sendMessage() {
       const messageInput = document.getElementById('message-input');
-      const recipientInput = document.getElementById('recipient-input');
-      const recipient = recipientInput.textContent.trim();
       const message = messageInput.value.trim();
+      
       if (message !== '') {
-        if(recipient){
-          const currentUser = document.getElementById('current-user');
-          let data = {
-            from:currentUser.textContent,
-            msg:message
+        if (currentRecipient) {
+          const data = {
+            from: currentUsername,
+            to: currentRecipient,
+            msg: message,
+            timestamp: Date.now()
+          };
+          if (!chatMessages.private[currentRecipient]) {
+            chatMessages.private[currentRecipient] = [];
           }
-          handlePrivate(data)
+          chatMessages.private[currentRecipient].push({
+            from: currentUsername,
+            msg: message,
+            sent: true,
+            timestamp: Date.now()
+          });
+          saveMessagesToSession();
+          displayMessage(data, true);
         }
-        socket.emit('chat message', { to: recipient, msg: message });
+        socket.emit('chat message', { to: currentRecipient, msg: message });
         messageInput.value = '';
       }
     }
 
-    function handlePrivate(data){
+    function displayMessage(data, isSent = false) {
       const chatBox = document.getElementById('chat-box');
-      const messageElement = document.createElement('p');
-      messageElement.style.backgroundColor = generateColorHash(data.from);
-      messageElement.innerHTML = `<strong>${data.from.slice(0, -4)}(p):</strong> ${data.msg}`;
+      const messageElement = document.createElement('div');
+      messageElement.className = isSent ? 'message sent' : 'message received';
+      if (!isSent) {
+        messageElement.style.backgroundColor = generateColorHash(data.from);
+      }
+      
+      const isPrivate = currentRecipient !== '';
+      const label = isPrivate ? '(Private)' : '';
+      const sender = isSent ? 'You' : data.from.slice(0, -4);
+      
+      messageElement.innerHTML = `
+        <strong>${sender} ${label}</strong>
+        <div class="message-text">${data.msg}</div>
+      `;
+      
       chatBox.appendChild(messageElement);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    function displayMessages(type, recipient = null) {
+      const chatBox = document.getElementById('chat-box');
+      chatBox.innerHTML = '';
+      
+      let messages = [];
+      if (type === 'group') {
+        messages = chatMessages.group;
+      } else if (type === 'private' && recipient) {
+        messages = chatMessages.private[recipient] || [];
+      }
+      
+      messages.forEach(msg => {
+        displayMessage(msg, msg.sent);
+      });
+    }
+
     socket.on('userList', (users) => {
       const userList = document.getElementById('user-list');
-      const currentUser = document.getElementById('current-user');
-      userList.innerHTML = ''
+      userList.innerHTML = '';
+      
       users.forEach((user) => {
-        if(currentUser.textContent !== user){
+        if (currentUsername !== user) {
           const listItem = document.createElement('li');
-          listItem.style.padding = '10px';
-          listItem.style.cursor = 'pointer';
-          listItem.style.marginBottom = '2px';
           listItem.textContent = user;
+          if (user === currentRecipient) {
+            listItem.classList.add('active');
+          }
           listItem.addEventListener('click', function() {
             setRecipient(this.textContent);
-            users.forEach((u) => {
-              const list = document.querySelector(`#user-list li`);
-              list.style.backgroundColor = '#555';
-              list.style.color = '#fff';
-            });
-            this.style.backgroundColor = '#fff';
-            this.style.color = '#000';
-            openNav();
+            closeNav();
           });
           userList.appendChild(listItem);
         }
       });
     });
+
     socket.on('group message', (data) => {
-      const chatBox = document.getElementById('chat-box');
-      const messageElement = document.createElement('p');
-      messageElement.style.backgroundColor = generateColorHash(data.from);
-      messageElement.innerHTML = `<strong>${data.from.slice(0, -4)}:</strong> ${data.msg}`;
-      chatBox.appendChild(messageElement);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      data.timestamp = Date.now();
+      chatMessages.group.push(data);
+      saveMessagesToSession();
+      
+      if (currentRecipient === '') {
+        displayMessage(data);
+      }
     });
 
     socket.on('private message', (data) => {
-      const chatBox = document.getElementById('chat-box');
-      const messageElement = document.createElement('p');
-      messageElement.style.backgroundColor = generateColorHash(data.from);
-      messageElement.innerHTML = `<strong>${data.from.slice(0, -4)}(p):</strong> ${data.msg}`;
-      chatBox.appendChild(messageElement);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      data.timestamp = Date.now();
+      if (!chatMessages.private[data.from]) {
+        chatMessages.private[data.from] = [];
+      }
+      chatMessages.private[data.from].push(data);
+      saveMessagesToSession();
+      
+      if (currentRecipient === data.from) {
+        displayMessage(data);
+      }
     });
 
     function generateColorHash(name) {
@@ -156,27 +379,47 @@
       for (let i = 0; i < name.length; i++) {
         hashCode = name.charCodeAt(i) + ((hashCode << 5) - hashCode);
       }
-      let color = '#';
-      for (let i = 0; i < 6; i++) {
-        const value = (hashCode >> (i * 4)) & 0xFF;
-        color += value.toString(16).padStart(2, '0');
-      }
-      color += '80';
-      return color.substring(0, 7) + "50";
+      const hue = Math.abs(hashCode % 360);
+      return `hsla(${hue}, 65%, 85%, 0.6)`;
     }
-  </script>
-  <script>
+
     function openNav() {
-      if(document.getElementById("mySidenav").style.width == "250px"){
-        closeNav()
-      }else{
-        document.getElementById("mySidenav").style.width = "250px";
-      }
+      document.getElementById("mySidenav").style.width = "280px";
     }
+
     function closeNav() {
       document.getElementById("mySidenav").style.width = "0";
     }
+
+    // Save messages periodically (every 30 seconds)
+    setInterval(() => {
+      if (currentUsername) {
+        saveMessagesToSession();
+      }
+    }, 30000);
+
+    // Save messages before page unload
+    window.addEventListener('beforeunload', () => {
+      if (currentUsername) {
+        saveMessagesToSession();
+      }
+    });
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Flash Chat Pro",
+    "description": "Anonymous private chat application with no registration required",
+    "applicationCategory": "CommunicationApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": "Anonymous chat, No registration, Private messaging, Secure communication, Adult-friendly"
+  }
   </script>
 </body>
-
 </html>

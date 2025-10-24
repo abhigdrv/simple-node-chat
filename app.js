@@ -38,6 +38,12 @@ function getKeyByValue(object, value) {
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
+app.get("/terms", (req, res) => {
+  res.sendFile(path.join(publicPath, 'terms.html'));
+});
+app.get("/privacy", (req, res) => {
+  res.sendFile(path.join(publicPath, 'privacy.html'));
+});
 
 server.listen(port, () => {
   console.log('Server listening on port '+port);
