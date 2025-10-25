@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Primary Meta Tags -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <!-- Primary Meta Tags -->
   <title>Flash Chat Pro - Anonymous Private Chat | No Registration Required</title>
   <meta name="title" content="Flash Chat Pro - Anonymous Private Chat | No Registration Required">
   <meta name="description" content="100% anonymous private chat. No sign-up, no data saved, no tracking. Instant secure messaging for adults. Start chatting privately in seconds without registration.">
@@ -36,69 +36,82 @@
   
   <!-- Canonical URL -->
   <link rel="canonical" href="https://renthomo.com/">
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="overlay" id="overlay" onclick="closeNav()"></div>
+  
   <div class="container">
-    <div style="background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: white; padding: 8px 20px; text-align: center; font-size: 13px; font-weight: 600;">
-  🔒 100% Anonymous • No Data Stored • No Registration • Secure & Private
-</div>
+    <div class="privacy-banner">
+      🔒 100% Anonymous • No Data Stored • No Registration
+    </div>
+
     <div class="header">
       <div class="header-left">
-        <div class="app-title">
-          <img src="./flash-chat-pro-transparent.png" alt="flash-chat-logo" srcset="./flash-chat-pro-transparent.png" width="100">
-        </div>
-        <div class="chat-mode" id="chat-mode">
-          <div class="mode-indicator"></div>
-          <span id="mode-text">Group Chat</span>
+        <div class="app-logo">💬</div>
+        <div class="chat-info">
+          <div class="chat-title" id="chat-title">Flash Chat</div>
+          <div class="chat-subtitle" id="chat-subtitle">Select a chat to start</div>
         </div>
       </div>
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <div class="user-badge" id="current-user-badge" style="display: none;">
+      <div class="header-actions">
+        <button class="icon-btn user-badge" id="current-user-badge" style="display: none;">
           <span>👤</span>
-          <span id="current-user"></span>
-        </div>
-        <button class="menu-btn" onclick="openNav()">☰</button>
+          <span class="unread-badge" id="total-unread"></span>
+        </button>
+        <button class="icon-btn" onclick="openNav()">☰</button>
       </div>
     </div>
 
     <div id="mySidenav" class="sidenav">
-      <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-      <button class="logout-btn" id="logout-btn" style="display: none;" onclick="logout()">Logout</button>
-      <div class="sidenav-header">Active Users</div>
-      <div class="group-chat-btn" onclick="setRecipient(''); closeNav();">
-        💬 Group Chat
+      <div class="sidenav-header">
+        <div class="sidenav-title">Flash Chat</div>
+        <button class="close-btn" onclick="closeNav()">&times;</button>
       </div>
-      <ul id="user-list"></ul>
-      <div class="session-info">
-        💾 Messages saved for this session
+      
+      <button class="logout-btn" id="logout-btn" style="display: none;" onclick="logout()">
+        🚪 Logout
+      </button>
+      
+      <button class="group-chat-btn" onclick="setRecipient(''); closeNav();">
+        <span>💬</span>
+        <span>Group Chat</span>
+      </button>
+
+      <div class="user-list-container">
+        <div class="user-list-header">Active Users</div>
+        <ul id="user-list"></ul>
+      </div>
+
+      <div class="footer-info">
+        🔞 18+ Only | Messages saved for session only<br>
+        <a href="/terms">Terms</a> • <a href="/privacy">Privacy</a>
       </div>
     </div>
 
     <div class="chat-box" id="chat-box">
       <div class="welcome-screen">
-        <div class="welcome-title">Welcome to Flash Chat! 👋</div>
+        <div class="welcome-icon">👋</div>
+        <div class="welcome-title">Welcome to Flash Chat!</div>
         <div class="welcome-subtitle">Enter your username below to start chatting</div>
+        <div style="padding: 15px 25px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+          <p style="margin-bottom: 8px;">🔞 <strong>18+ Only</strong> | By using this service, you confirm you are 18 years or older</p>
+          <p style="margin: 0;">No messages are stored on servers. Messages exist only in your browser session. We do not monitor, record, or store any chat content. Users are responsible for their own conduct.</p>
+          <p style="margin-top: 8px;"><a href="/terms" style="color: #667eea; text-decoration: none; margin: 0 10px;">Terms of Service</a> | <a href="/privacy" style="color: #667eea; text-decoration: none; margin: 0 10px;">Privacy Policy</a></p>
+        </div>
       </div>
     </div>
 
     <div class="input-box">
-      <input type="text" id="username-input" placeholder="Enter your username...">
-      <button id="login-btn" onclick="setUsername()">Join Chat</button>
-      <input type="text" id="message-input" placeholder="Type your message..." style="display: none;">
-      <button id="send-btn" style="display: none;" onclick="sendMessage()">Send</button>
+      <input type="text" id="username-input" placeholder="Enter your username..." autocomplete="off" autocorrect="off" autocapitalize="off">
+      <button class="join-btn" id="login-btn" onclick="setUsername()">Join</button>
+      <input type="text" id="message-input" placeholder="Type a message" style="display: none;" autocomplete="off" autocorrect="off">
+      <button class="send-btn" id="send-btn" style="display: none;" onclick="sendMessage()">➤</button>
     </div>
-
-    <div style="background: #f1f5f9; padding: 15px 25px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-  <p style="margin-bottom: 8px;">🔞 <strong>18+ Only</strong> | By using this service, you confirm you are 18 years or older</p>
-  <p style="margin: 0;">No messages are stored on servers. Messages exist only in your browser session. We do not monitor, record, or store any chat content. Users are responsible for their own conduct.</p>
-  <p style="margin-top: 8px;"><a href="/terms" style="color: #667eea; text-decoration: none; margin: 0 10px;">Terms of Service</a> | <a href="/privacy" style="color: #667eea; text-decoration: none; margin: 0 10px;">Privacy Policy</a></p>
-</div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+  <script src="./script.js"></script>
 
   <script type="application/ld+json">
   {

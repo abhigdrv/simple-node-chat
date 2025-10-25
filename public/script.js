@@ -1,16 +1,9 @@
 const socket = io();
 let currentRecipient = "";
 let currentUsername = "";
-let chatMessages = {
-  group: [],
-  private: {},
-};
-let unreadCounts = {
-  group: 0,
-  private: {},
-};
+let chatMessages = { group: [], private: {} };
+let unreadCounts = { group: 0, private: {} };
 
-// Storage keys
 const STORAGE_KEYS = {
   USERNAME: "flashchat_username",
   MESSAGES: "flashchat_messages",
@@ -18,13 +11,32 @@ const STORAGE_KEYS = {
   UNREAD: "flashchat_unread",
 };
 
-// Initialize on page load
+// Prevent zoom on input focus (iOS)
+document.querySelectorAll("input").forEach((input) => {
+  input.addEventListener("focus", () => {
+    document.body.style.zoom = 1;
+  });
+});
+
+// Auto-scroll on keyboard show
+let lastHeight = window.innerHeight;
+window.addEventListener("resize", () => {
+  const currentHeight = window.innerHeight;
+  if (currentHeight < lastHeight) {
+    // Keyboard shown
+    setTimeout(() => {
+      const chatBox = document.getElementById("chat-box");
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }, 100);
+  }
+  lastHeight = currentHeight;
+});
+
 window.addEventListener("DOMContentLoaded", () => {
   loadFromStorage();
   checkAutoLogin();
 });
 
-// Save messages to sessionStorage whenever they change
 function saveMessagesToSession() {
   try {
     sessionStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(chatMessages));
@@ -35,65 +47,40 @@ function saveMessagesToSession() {
   }
 }
 
-// Load messages from sessionStorage
 function loadFromStorage() {
   try {
     const savedMessages = sessionStorage.getItem(STORAGE_KEYS.MESSAGES);
     const savedRecipient = sessionStorage.getItem(STORAGE_KEYS.RECIPIENT);
     const savedUnread = sessionStorage.getItem(STORAGE_KEYS.UNREAD);
 
-    if (savedMessages) {
-      chatMessages = JSON.parse(savedMessages);
-    }
-
-    if (savedRecipient) {
-      currentRecipient = savedRecipient;
-    }
-
-    if (savedUnread) {
-      unreadCounts = JSON.parse(savedUnread);
-    }
+    if (savedMessages) chatMessages = JSON.parse(savedMessages);
+    if (savedRecipient) currentRecipient = savedRecipient;
+    if (savedUnread) unreadCounts = JSON.parse(savedUnread);
   } catch (e) {
     console.error("Error loading from sessionStorage:", e);
   }
 }
 
-// Update total unread count badge
 function updateTotalUnreadBadge() {
   let totalUnread = unreadCounts.group;
-
-  // Add all private message unread counts
   Object.keys(unreadCounts.private).forEach((user) => {
     totalUnread += unreadCounts.private[user] || 0;
   });
 
-  const currentUserBadge = document.getElementById("current-user-badge");
-  let badge = currentUserBadge.querySelector(".unread-badge");
-
+  const badge = document.getElementById("total-unread");
   if (totalUnread > 0) {
-    if (!badge) {
-      badge = document.createElement("span");
-      badge.className = "unread-badge";
-      currentUserBadge.appendChild(badge);
-    }
     badge.textContent = totalUnread > 99 ? "99+" : totalUnread;
     badge.style.display = "flex";
   } else {
-    if (badge) {
-      badge.style.display = "none";
-    }
+    badge.style.display = "none";
   }
 }
 
-// Update user list with unread counts
 function updateUserListUnread() {
   const userListItems = document.querySelectorAll("#user-list li");
-
   userListItems.forEach((li) => {
-    const username = li.textContent.replace(/\d+$/, "").trim();
     const fullUsername = li.getAttribute("data-username");
     const unreadCount = unreadCounts.private[fullUsername] || 0;
-
     let badge = li.querySelector(".user-unread-badge");
 
     if (unreadCount > 0) {
@@ -104,10 +91,8 @@ function updateUserListUnread() {
       }
       badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
       badge.style.display = "flex";
-    } else {
-      if (badge) {
-        badge.style.display = "none";
-      }
+    } else if (badge) {
+      badge.style.display = "none";
     }
   });
 
@@ -115,40 +100,35 @@ function updateUserListUnread() {
   saveMessagesToSession();
 }
 
-// Check if user was previously logged in
 function checkAutoLogin() {
   const savedUsername = localStorage.getItem(STORAGE_KEYS.USERNAME);
-
   if (savedUsername) {
     currentUsername = savedUsername;
     autoLogin(savedUsername);
   }
 }
 
-// Auto login with saved username
 function autoLogin(username) {
   const usernameInput = document.getElementById("username-input");
   const messageInput = document.getElementById("message-input");
   const setButton = document.getElementById("login-btn");
   const sendButton = document.getElementById("send-btn");
   const logoutBtn = document.getElementById("logout-btn");
-  const currentUser = document.getElementById("current-user");
   const currentUserBadge = document.getElementById("current-user-badge");
 
   socket.emit("setUsername", username);
   usernameInput.style.display = "none";
   messageInput.style.display = "block";
   setButton.style.display = "none";
-  sendButton.style.display = "block";
+  sendButton.style.display = "flex";
   logoutBtn.style.display = "block";
-  currentUser.textContent = username;
   currentUserBadge.style.display = "flex";
 
   document.getElementById("chat-box").innerHTML = "";
 
-  // Restore chat view
   if (currentRecipient === "") {
     displayMessages("group");
+    updateChatHeader("Group Chat", "Tap to see members");
   } else {
     setRecipient(currentRecipient);
   }
@@ -156,15 +136,33 @@ function autoLogin(username) {
   updateTotalUnreadBadge();
 }
 
-// Logout function
 function logout() {
   if (confirm("Are you sure you want to logout? Your messages will be cleared.")) {
+    // Clear localStorage
     localStorage.removeItem(STORAGE_KEYS.USERNAME);
+    
+    // Clear sessionStorage
     sessionStorage.removeItem(STORAGE_KEYS.MESSAGES);
     sessionStorage.removeItem(STORAGE_KEYS.RECIPIENT);
     sessionStorage.removeItem(STORAGE_KEYS.UNREAD);
+    
+    // Clear in-memory variables
+    currentUsername = "";
+    currentRecipient = "";
+    chatMessages = { group: [], private: {} };
+    unreadCounts = { group: 0, private: {} };
+    
+    // Disconnect socket
+    socket.disconnect();
+    
+    // Reload page
     location.reload();
   }
+}
+
+function updateChatHeader(title, subtitle) {
+  document.getElementById("chat-title").textContent = title;
+  document.getElementById("chat-subtitle").textContent = subtitle;
 }
 
 document.getElementById("message-input").addEventListener("keypress", function (event) {
@@ -189,40 +187,35 @@ function setUsername() {
   const logoutBtn = document.getElementById("logout-btn");
   const randomNumber = Math.floor(Math.random() * 900) + 100;
   const username = usernameInput.value.trim() + "_" + randomNumber;
-  const currentUser = document.getElementById("current-user");
   const currentUserBadge = document.getElementById("current-user-badge");
 
   if (usernameInput.value.trim() !== "") {
     currentUsername = username;
-
-    // Save username to localStorage
     localStorage.setItem(STORAGE_KEYS.USERNAME, username);
 
     socket.emit("setUsername", username);
     usernameInput.style.display = "none";
     messageInput.style.display = "block";
     setButton.style.display = "none";
-    sendButton.style.display = "block";
+    sendButton.style.display = "flex";
     logoutBtn.style.display = "block";
-    currentUser.textContent = username;
     currentUserBadge.style.display = "flex";
 
     document.getElementById("chat-box").innerHTML = "";
+    updateChatHeader("Group Chat", "Tap to see members");
   }
 }
 
 function setRecipient(val) {
   currentRecipient = val;
-  const modeText = document.getElementById("mode-text");
 
   if (val === "") {
-    modeText.textContent = "Group Chat";
-    // Clear group chat unread count
+    updateChatHeader("Group Chat", "Tap to see members");
     unreadCounts.group = 0;
     displayMessages("group");
   } else {
-    modeText.textContent = `Chat with ${val.slice(0, -4)}`;
-    // Clear this user's unread count
+    const displayName = val.slice(0, -4);
+    updateChatHeader(displayName, "Online");
     unreadCounts.private[val] = 0;
     if (!chatMessages.private[val]) {
       chatMessages.private[val] = [];
@@ -230,11 +223,8 @@ function setRecipient(val) {
     displayMessages("private", val);
   }
 
-  // Update badges
   updateUserListUnread();
   updateTotalUnreadBadge();
-
-  // Save current recipient
   saveMessagesToSession();
 
   document.querySelectorAll("#user-list li").forEach((li) => {
@@ -279,19 +269,35 @@ function displayMessage(data, isSent = false) {
   const chatBox = document.getElementById("chat-box");
   const messageElement = document.createElement("div");
   messageElement.className = isSent ? "message sent" : "message received";
-  if (!isSent) {
-    messageElement.style.backgroundColor = generateColorHash(data.from);
+
+  const bubble = document.createElement("div");
+  bubble.className = "message-bubble";
+
+  // Show sender name only in group chat for received messages
+  const isGroupChat = currentRecipient === "";
+  if (isGroupChat && !isSent) {
+    const senderName = data.from.slice(0, -4);
+    const senderColor = generateColorHash(data.from);
+    const senderSpan = document.createElement("span");
+    senderSpan.className = "message-sender";
+    senderSpan.style.color = senderColor;
+    senderSpan.textContent = senderName;
+    bubble.appendChild(senderSpan);
   }
 
-  const isPrivate = currentRecipient !== "";
-  const label = isPrivate ? "(Private)" : "";
-  const sender = isSent ? "You" : data.from.slice(0, -4);
+  const textDiv = document.createElement("div");
+  textDiv.className = "message-text";
+  textDiv.textContent = data.msg;
+  bubble.appendChild(textDiv);
 
-  messageElement.innerHTML = `
-        <strong>${sender} ${label}</strong>
-        <div class="message-text">${data.msg}</div>
-      `;
+  const time = new Date(data.timestamp || Date.now());
+  const timeStr = time.getHours().toString().padStart(2, "0") + ":" + time.getMinutes().toString().padStart(2, "0");
+  const timeSpan = document.createElement("span");
+  timeSpan.className = "message-time";
+  timeSpan.textContent = timeStr;
+  bubble.appendChild(timeSpan);
 
+  messageElement.appendChild(bubble);
   chatBox.appendChild(messageElement);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -321,8 +327,21 @@ socket.on("userList", (users) => {
       const listItem = document.createElement("li");
       listItem.setAttribute("data-username", user);
 
-      const displayName = user.slice(0, -4);
-      listItem.textContent = displayName;
+      const avatar = document.createElement("div");
+      avatar.className = "user-avatar";
+      avatar.textContent = user.charAt(0).toUpperCase();
+      avatar.style.background = generateColorHash(user);
+
+      const userInfo = document.createElement("div");
+      userInfo.className = "user-info";
+
+      const userName = document.createElement("div");
+      userName.className = "user-name";
+      userName.textContent = user.slice(0, -4);
+
+      userInfo.appendChild(userName);
+      listItem.appendChild(avatar);
+      listItem.appendChild(userInfo);
 
       if (user === currentRecipient) {
         listItem.classList.add("active");
@@ -337,7 +356,6 @@ socket.on("userList", (users) => {
     }
   });
 
-  // Update unread counts after user list is rebuilt
   updateUserListUnread();
 });
 
@@ -345,7 +363,6 @@ socket.on("group message", (data) => {
   data.timestamp = Date.now();
   chatMessages.group.push(data);
 
-  // Increment unread count if not viewing group chat
   if (currentRecipient !== "") {
     unreadCounts.group = (unreadCounts.group || 0) + 1;
     updateTotalUnreadBadge();
@@ -365,7 +382,6 @@ socket.on("private message", (data) => {
   }
   chatMessages.private[data.from].push(data);
 
-  // Increment unread count if not viewing this chat
   if (currentRecipient !== data.from) {
     if (!unreadCounts.private[data.from]) {
       unreadCounts.private[data.from] = 0;
@@ -387,25 +403,25 @@ function generateColorHash(name) {
     hashCode = name.charCodeAt(i) + ((hashCode << 5) - hashCode);
   }
   const hue = Math.abs(hashCode % 360);
-  return `hsla(${hue}, 65%, 85%, 0.6)`;
+  return `hsl(${hue}, 65%, 45%)`;
 }
 
 function openNav() {
-  document.getElementById("mySidenav").style.width = "280px";
+  document.getElementById("mySidenav").classList.add("open");
+  document.getElementById("overlay").classList.add("show");
 }
 
 function closeNav() {
-  document.getElementById("mySidenav").style.width = "0";
+  document.getElementById("mySidenav").classList.remove("open");
+  document.getElementById("overlay").classList.remove("show");
 }
 
-// Save messages periodically (every 30 seconds)
 setInterval(() => {
   if (currentUsername) {
     saveMessagesToSession();
   }
 }, 30000);
 
-// Save messages before page unload
 window.addEventListener("beforeunload", () => {
   if (currentUsername) {
     saveMessagesToSession();
