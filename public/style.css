@@ -93,8 +93,37 @@ body {
   gap: 5px;
   white-space: nowrap;
   max-width: 120px;
-  overflow: hidden;
+  /* overflow: hidden; */
   text-overflow: ellipsis;
+  position: relative;
+}
+
+.unread-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .menu-btn, .logout-btn {
@@ -102,7 +131,7 @@ body {
   border: none;
   color: white;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 16px;
   transition: all 0.3s;
@@ -179,7 +208,7 @@ body {
 }
 
 #user-list li {
-  padding: 15px;
+  padding: 6px 10px;
   margin-bottom: 8px;
   background: rgba(255, 255, 255, 0.1);
   color: white;
@@ -188,6 +217,14 @@ body {
   transition: all 0.3s;
   font-weight: 500;
   word-wrap: break-word;
+  display: flex;
+}
+
+#user-list li span {
+  background: red;
+  padding: 0px 6px;
+  margin-left: 6px;
+  border-radius: 6px;
 }
 
 #user-list li:hover {
@@ -383,11 +420,13 @@ body {
     font-size: 11px;
     padding: 4px 8px;
     max-width: 100px;
+    border-radius: 4px;
   }
 
   .menu-btn {
     padding: 2px 6px;
     font-size: 14px;
+    border-radius: 4px;
   }
 
   .logout-btn {
