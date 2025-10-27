@@ -111,6 +111,7 @@ function checkAutoLogin() {
 function autoLogin(username) {
   const usernameInput = document.getElementById("username-input");
   const messageInput = document.getElementById("message-input");
+  const imgButton = document.getElementById("image-btn");
   const setButton = document.getElementById("login-btn");
   const sendButton = document.getElementById("send-btn");
   const logoutBtn = document.getElementById("logout-btn");
@@ -119,6 +120,7 @@ function autoLogin(username) {
   socket.emit("setUsername", username);
   usernameInput.style.display = "none";
   messageInput.style.display = "block";
+  imgButton.style.display = "flex";
   setButton.style.display = "none";
   sendButton.style.display = "flex";
   logoutBtn.style.display = "block";
@@ -179,9 +181,28 @@ document.getElementById("username-input").addEventListener("keypress", function 
   }
 });
 
+document.getElementById("image-input").addEventListener("change", function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024) {
+    alert("File too large! Please select file under 2MB.");
+    event.target.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const base64String = e.target.result;
+    const messageInput = document.getElementById("message-input");
+    messageInput.value = base64String;
+    document.getElementById("send-btn").click();
+  };
+  reader.readAsDataURL(file);
+});
+
 function setUsername() {
   const usernameInput = document.getElementById("username-input");
   const messageInput = document.getElementById("message-input");
+  const imgButton = document.getElementById("image-btn");
   const setButton = document.getElementById("login-btn");
   const sendButton = document.getElementById("send-btn");
   const logoutBtn = document.getElementById("logout-btn");
@@ -196,6 +217,7 @@ function setUsername() {
     socket.emit("setUsername", username);
     usernameInput.style.display = "none";
     messageInput.style.display = "block";
+    imgButton.style.display = "flex";
     setButton.style.display = "none";
     sendButton.style.display = "flex";
     logoutBtn.style.display = "block";
@@ -287,7 +309,30 @@ function displayMessage(data, isSent = false) {
 
   const textDiv = document.createElement("div");
   textDiv.className = "message-text";
-  textDiv.textContent = data.msg;
+  if (typeof data.msg === "string" && data.msg.startsWith("data:image/")) {
+    const img = document.createElement("img");
+    img.src = data.msg;
+    img.alt = "Image message";
+    img.style.maxWidth = "200px";
+    img.style.borderRadius = "8px";
+    img.style.cursor = "pointer";
+    img.addEventListener("click", () => {
+      const byteString = atob(data.msg.split(",")[1]);
+      const mimeString = data.msg.split(",")[0].split(":")[1].split(";")[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    });
+    textDiv.appendChild(img);
+  } else {
+    textDiv.textContent = data.msg;
+  }
   bubble.appendChild(textDiv);
 
   const time = new Date(data.timestamp || Date.now());
