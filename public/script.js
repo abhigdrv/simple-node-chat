@@ -184,7 +184,7 @@ document.getElementById("username-input").addEventListener("keypress", function 
 document.getElementById("image-input").addEventListener("change", function (event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024) {
+  if (file.size > 2 * 1024 * 1024) {
     alert("File too large! Please select file under 2MB.");
     event.target.value = "";
     return;
