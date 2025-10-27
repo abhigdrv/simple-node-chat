@@ -8,17 +8,21 @@ const io = socketIO(server);
 const path = require('path');
 const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
+
 const users = {};
+
 io.on('connection', (socket) => {
   socket.on('setUsername', (username) => {
     users[socket.id] = username;
     io.emit('userList', Object.values(users));
   });
+
   socket.on('disconnect', () => {
     console.log('User disconnected');
     delete users[socket.id];
     io.emit('userList', Object.values(users));
   });
+
   socket.on('chat message', (data) => {
     const { to, msg } = data;
     const from = users[socket.id] || 'Anonymous';
@@ -27,6 +31,58 @@ io.on('connection', (socket) => {
       io.to(sendTo).emit('private message', { from, msg });
     } else {
       io.emit('group message', { from, msg });
+    }
+  });
+
+  // WebRTC Signaling Events
+  socket.on('call-user', (data) => {
+    const { to, offer, callType } = data;
+    const from = users[socket.id] || 'Anonymous';
+    const sendTo = getKeyByValue(users, to);
+    
+    if (sendTo) {
+      io.to(sendTo).emit('incoming-call', {
+        from,
+        offer,
+        callType,
+        socketId: socket.id
+      });
+    }
+  });
+
+  socket.on('call-answer', (data) => {
+    const { to, answer } = data;
+    const sendTo = getKeyByValue(users, to);
+    
+    if (sendTo) {
+      io.to(sendTo).emit('call-answered', { answer });
+    }
+  });
+
+  socket.on('ice-candidate', (data) => {
+    const { to, candidate } = data;
+    const sendTo = getKeyByValue(users, to);
+    
+    if (sendTo) {
+      io.to(sendTo).emit('ice-candidate', { candidate });
+    }
+  });
+
+  socket.on('end-call', (data) => {
+    const { to } = data;
+    const sendTo = getKeyByValue(users, to);
+    
+    if (sendTo) {
+      io.to(sendTo).emit('call-ended');
+    }
+  });
+
+  socket.on('reject-call', (data) => {
+    const { to } = data;
+    const sendTo = getKeyByValue(users, to);
+    
+    if (sendTo) {
+      io.to(sendTo).emit('call-rejected');
     }
   });
 });
@@ -46,7 +102,7 @@ app.get("/privacy", (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log('Server listening on port '+port);
+  console.log('Server listening on port ' + port);
 });
 
 server.keepAliveTimeout = 120 * 1000;

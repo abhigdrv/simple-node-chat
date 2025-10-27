@@ -542,3 +542,211 @@
         font-size: 11px;
       }
     }
+
+
+    /* Call Modal */
+.call-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.call-modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 400px;
+  animation: slideUp 0.3s ease;
+}
+
+.call-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.call-modal h3 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  color: #1e293b;
+}
+
+.call-modal p {
+  margin: 0 0 30px 0;
+  color: #64748b;
+  font-size: 16px;
+}
+
+.call-modal-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.accept-call-btn, .reject-call-btn {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.accept-call-btn {
+  background: #10b981;
+  color: white;
+}
+
+.accept-call-btn:hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+.reject-call-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.reject-call-btn:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+/* Call UI */
+.call-ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.call-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.call-header {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+#call-status {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.end-call-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.end-call-btn:hover {
+  background: #dc2626;
+}
+
+.video-container {
+  flex: 1;
+  position: relative;
+  background: #000;
+}
+
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.local-video {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 150px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.call-controls {
+  padding: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .local-video {
+    width: 100px;
+    height: 133px;
+    top: 10px;
+    right: 10px;
+  }
+
+  .call-controls {
+    padding: 20px;
+  }
+
+  .control-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+}

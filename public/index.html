@@ -55,6 +55,12 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="icon-btn" id="audio-call-btn" style="display: none;" title="Audio Call">
+          📞
+        </button>
+        <button class="icon-btn" id="video-call-btn" style="display: none;" title="Video Call">
+          📹
+        </button>
         <button class="icon-btn user-badge" id="current-user-badge" style="display: none;" onclick="openNav()">
           <span>👤</span>
           <span class="unread-badge" id="total-unread"></span>
@@ -73,7 +79,7 @@
         🚪 Logout
       </button>
       
-      <button class="group-chat-btn" onclick="setRecipient(''); closeNav();">
+      <button class="group-chat-btn" id="group-chat-btn">
         <span>💬</span>
         <span>Group Chat</span>
       </button>

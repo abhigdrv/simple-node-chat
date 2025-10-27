@@ -6,9 +6,13 @@ import { setRecipient } from './chat.js';
 import { sendMessage } from './messages.js';
 import { setupMobileOptimizations, updateTotalUnreadBadge } from './ui.js';
 import { setupSocketHandlers } from './socket-handlers.js';
+import { WebRTCManager } from './webrtc.js';
 
 // Initialize socket
 const socket = io();
+
+// Initialize WebRTC Manager
+window.webrtcManager = new WebRTCManager(socket);
 
 // Application state
 const state = {
@@ -98,6 +102,32 @@ setInterval(() => {
 window.addEventListener("beforeunload", () => {
   if (state.currentUsername) {
     saveMessagesToSession(state.chatMessages, state.currentRecipient, state.unreadCounts);
+  }
+});
+
+document.getElementById("audio-call-btn").addEventListener("click", () => {
+  if (state.currentRecipient && window.webrtcManager) {
+    window.webrtcManager.startCall(state.currentRecipient, 'audio');
+  }
+});
+
+document.getElementById("video-call-btn").addEventListener("click", () => {
+  if (state.currentRecipient && window.webrtcManager) {
+    window.webrtcManager.startCall(state.currentRecipient, 'video');
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const groupBtn = document.getElementById('group-chat-btn');
+  if (groupBtn) {
+    groupBtn.addEventListener('click', () => {
+      setRecipient('', state);
+      if (typeof window.closeNav === 'function') {
+        window.closeNav();
+      } else {
+        import('./ui.js').then(m => m.closeNav());
+      }
+    });
   }
 });
 
