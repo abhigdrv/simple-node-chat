@@ -1,10 +1,24 @@
-// WebRTC configuration
+// WebRTC configuration with multiple STUN servers and better fallbacks
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
-  ]
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // Add these free TURN servers as fallback
+    { 
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    { 
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ],
+  iceCandidatePoolSize: 10
 };
 
 export class WebRTCManager {
@@ -14,7 +28,11 @@ export class WebRTCManager {
     this.localStream = null;
     this.remoteStream = null;
     this.currentCallRecipient = null;
-    this.callType = null; // 'audio' or 'video'
+    this.callType = null;
+    this.pendingIceCandidates = []; // Buffer for ICE candidates
+    this.isInitiator = false;
+    this.connectionAttempts = 0;
+    this.maxConnectionAttempts = 3;
     
     this.setupSocketListeners();
   }
@@ -45,11 +63,23 @@ export class WebRTCManager {
     try {
       this.currentCallRecipient = recipient;
       this.callType = callType;
+      this.isInitiator = true;
+      this.connectionAttempts++;
+
+      console.log(`Starting ${callType} call to ${recipient} (attempt ${this.connectionAttempts})`);
 
       // Get user media
       const constraints = {
-        audio: true,
-        video: callType === 'video'
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: callType === 'video' ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        } : false
       };
 
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -68,12 +98,18 @@ export class WebRTCManager {
 
       // Add tracks to peer connection
       this.localStream.getTracks().forEach(track => {
+        console.log(`Adding ${track.kind} track to peer connection`);
         this.peerConnection.addTrack(track, this.localStream);
       });
 
       // Create and send offer
-      const offer = await this.peerConnection.createOffer();
+      const offer = await this.peerConnection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: callType === 'video'
+      });
+      
       await this.peerConnection.setLocalDescription(offer);
+      console.log('Local description set, sending offer');
 
       this.socket.emit('call-user', {
         to: recipient,
@@ -81,9 +117,24 @@ export class WebRTCManager {
         callType: callType
       });
 
+      // Set timeout for call connection
+      this.setCallTimeout();
+
     } catch (error) {
       console.error('Error starting call:', error);
-      alert('Could not access camera/microphone: ' + error.message);
+      let errorMessage = 'Could not start call: ';
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage += 'Permission denied. Please allow camera/microphone access.';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += 'No camera/microphone found.';
+      } else if (error.name === 'NotReadableError') {
+        errorMessage += 'Camera/microphone is already in use.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
       this.endCall();
     }
   }
@@ -92,6 +143,9 @@ export class WebRTCManager {
     const { from, offer, callType } = data;
     this.currentCallRecipient = from;
     this.callType = callType;
+    this.isInitiator = false;
+
+    console.log(`Incoming ${callType} call from ${from}`);
 
     // Show incoming call modal
     this.showIncomingCallModal(from, callType, async (accepted) => {
@@ -99,8 +153,16 @@ export class WebRTCManager {
         try {
           // Get user media
           const constraints = {
-            audio: true,
-            video: callType === 'video'
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            },
+            video: callType === 'video' ? {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: 'user'
+            } : false
           };
 
           this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -119,15 +181,21 @@ export class WebRTCManager {
 
           // Add tracks
           this.localStream.getTracks().forEach(track => {
+            console.log(`Adding ${track.kind} track to peer connection`);
             this.peerConnection.addTrack(track, this.localStream);
           });
 
-          // Set remote description
+          // Set remote description first
+          console.log('Setting remote description from offer');
           await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+          // Process any pending ICE candidates
+          await this.processPendingIceCandidates();
 
           // Create answer
           const answer = await this.peerConnection.createAnswer();
           await this.peerConnection.setLocalDescription(answer);
+          console.log('Local description set, sending answer');
 
           // Send answer
           this.socket.emit('call-answer', {
@@ -135,9 +203,24 @@ export class WebRTCManager {
             answer: answer
           });
 
+          // Set timeout for call connection
+          this.setCallTimeout();
+
         } catch (error) {
           console.error('Error accepting call:', error);
-          alert('Could not access camera/microphone: ' + error.message);
+          let errorMessage = 'Could not accept call: ';
+          
+          if (error.name === 'NotAllowedError') {
+            errorMessage += 'Permission denied. Please allow camera/microphone access.';
+          } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera/microphone found.';
+          } else if (error.name === 'NotReadableError') {
+            errorMessage += 'Camera/microphone is already in use.';
+          } else {
+            errorMessage += error.message;
+          }
+          
+          alert(errorMessage);
           this.rejectCall();
         }
       } else {
@@ -148,32 +231,111 @@ export class WebRTCManager {
 
   async handleCallAnswered(data) {
     const { answer } = data;
-    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    this.updateCallStatus('Connected');
+    try {
+      console.log('Received answer, setting remote description');
+      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+      
+      // Process any pending ICE candidates
+      await this.processPendingIceCandidates();
+      
+      this.updateCallStatus('Connecting...');
+    } catch (error) {
+      console.error('Error handling call answer:', error);
+      this.endCall();
+    }
   }
 
   async handleIceCandidate(data) {
     const { candidate } = data;
-    if (this.peerConnection && candidate) {
+    
+    if (!candidate) {
+      console.log('Received null ICE candidate (end of candidates)');
+      return;
+    }
+
+    console.log('Received ICE candidate');
+
+    // If we don't have a peer connection or remote description yet, buffer the candidate
+    if (!this.peerConnection || !this.peerConnection.remoteDescription) {
+      console.log('Buffering ICE candidate (no remote description yet)');
+      this.pendingIceCandidates.push(candidate);
+      return;
+    }
+
+    try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      console.log('ICE candidate added successfully');
+    } catch (error) {
+      console.error('Error adding ICE candidate:', error);
     }
   }
 
+  async processPendingIceCandidates() {
+    if (this.pendingIceCandidates.length === 0) return;
+
+    console.log(`Processing ${this.pendingIceCandidates.length} pending ICE candidates`);
+    
+    for (const candidate of this.pendingIceCandidates) {
+      try {
+        await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log('Pending ICE candidate added');
+      } catch (error) {
+        console.error('Error adding pending ICE candidate:', error);
+      }
+    }
+    
+    this.pendingIceCandidates = [];
+  }
+
   createPeerConnection() {
+    console.log('Creating peer connection');
     this.peerConnection = new RTCPeerConnection(ICE_SERVERS);
 
     // Handle ICE candidates
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log('Sending ICE candidate');
         this.socket.emit('ice-candidate', {
           to: this.currentCallRecipient,
           candidate: event.candidate
         });
+      } else {
+        console.log('ICE candidate gathering complete');
+      }
+    };
+
+    // Handle ICE connection state changes
+    this.peerConnection.oniceconnectionstatechange = () => {
+      console.log('ICE connection state:', this.peerConnection.iceConnectionState);
+      
+      switch (this.peerConnection.iceConnectionState) {
+        case 'connected':
+          this.updateCallStatus('Connected');
+          this.connectionAttempts = 0;
+          break;
+        case 'disconnected':
+          this.updateCallStatus('Reconnecting...');
+          break;
+        case 'failed':
+          console.error('ICE connection failed');
+          if (this.connectionAttempts < this.maxConnectionAttempts) {
+            this.updateCallStatus('Connection failed, retrying...');
+            setTimeout(() => this.restartIce(), 1000);
+          } else {
+            alert('Connection failed. Please try again.');
+            this.endCall();
+          }
+          break;
+        case 'closed':
+          this.endCall();
+          break;
       }
     };
 
     // Handle remote stream
     this.peerConnection.ontrack = (event) => {
+      console.log(`Received remote ${event.track.kind} track`);
+      
       if (!this.remoteStream) {
         this.remoteStream = new MediaStream();
         const remoteVideo = document.getElementById('remote-video');
@@ -181,6 +343,7 @@ export class WebRTCManager {
           remoteVideo.srcObject = this.remoteStream;
         }
       }
+      
       this.remoteStream.addTrack(event.track);
       this.updateCallStatus('Connected');
     };
@@ -188,17 +351,68 @@ export class WebRTCManager {
     // Handle connection state changes
     this.peerConnection.onconnectionstatechange = () => {
       console.log('Connection state:', this.peerConnection.connectionState);
+      
       if (this.peerConnection.connectionState === 'disconnected' || 
           this.peerConnection.connectionState === 'failed') {
-        this.endCall();
+        if (this.connectionAttempts < this.maxConnectionAttempts) {
+          this.updateCallStatus('Connection lost, reconnecting...');
+        }
       }
+    };
+
+    // Handle signaling state changes
+    this.peerConnection.onsignalingstatechange = () => {
+      console.log('Signaling state:', this.peerConnection.signalingState);
     };
   }
 
+  async restartIce() {
+    if (!this.peerConnection || !this.isInitiator) return;
+
+    try {
+      console.log('Restarting ICE...');
+      const offer = await this.peerConnection.createOffer({ iceRestart: true });
+      await this.peerConnection.setLocalDescription(offer);
+      
+      this.socket.emit('call-user', {
+        to: this.currentCallRecipient,
+        offer: offer,
+        callType: this.callType
+      });
+    } catch (error) {
+      console.error('Error restarting ICE:', error);
+      this.endCall();
+    }
+  }
+
+  setCallTimeout() {
+    // Set a 30-second timeout for establishing connection
+    this.callTimeout = setTimeout(() => {
+      if (this.peerConnection && 
+          this.peerConnection.iceConnectionState !== 'connected' &&
+          this.peerConnection.iceConnectionState !== 'completed') {
+        console.error('Call connection timeout');
+        alert('Connection timeout. Please check your network and try again.');
+        this.endCall();
+      }
+    }, 30000);
+  }
+
   endCall() {
+    console.log('Ending call');
+    
+    // Clear timeout
+    if (this.callTimeout) {
+      clearTimeout(this.callTimeout);
+      this.callTimeout = null;
+    }
+
     // Stop all tracks
     if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
+      this.localStream.getTracks().forEach(track => {
+        track.stop();
+        console.log(`Stopped ${track.kind} track`);
+      });
       this.localStream = null;
     }
 
@@ -216,17 +430,23 @@ export class WebRTCManager {
     // Hide call UI
     this.hideCallUI();
 
+    // Reset state
     this.currentCallRecipient = null;
     this.remoteStream = null;
     this.callType = null;
+    this.pendingIceCandidates = [];
+    this.isInitiator = false;
+    this.connectionAttempts = 0;
   }
 
   rejectCall() {
+    console.log('Rejecting call');
     if (this.currentCallRecipient) {
       this.socket.emit('reject-call', { to: this.currentCallRecipient });
     }
     this.hideIncomingCallModal();
     this.currentCallRecipient = null;
+    this.pendingIceCandidates = [];
   }
 
   handleCallRejected() {
@@ -239,7 +459,8 @@ export class WebRTCManager {
       const audioTrack = this.localStream.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
-        return !audioTrack.enabled; // Return muted state
+        console.log(`Audio ${audioTrack.enabled ? 'unmuted' : 'muted'}`);
+        return !audioTrack.enabled;
       }
     }
     return false;
@@ -250,7 +471,8 @@ export class WebRTCManager {
       const videoTrack = this.localStream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
-        return !videoTrack.enabled; // Return disabled state
+        console.log(`Video ${videoTrack.enabled ? 'enabled' : 'disabled'}`);
+        return !videoTrack.enabled;
       }
     }
     return false;
@@ -329,6 +551,7 @@ export class WebRTCManager {
   }
 
   updateCallStatus(status) {
+    console.log('Call status:', status);
     const statusEl = document.getElementById('call-status');
     if (statusEl) {
       statusEl.textContent = status;
