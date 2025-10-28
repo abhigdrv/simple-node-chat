@@ -37,6 +37,8 @@ export function clearStorage() {
   sessionStorage.removeItem(STORAGE_KEYS.MESSAGES);
   sessionStorage.removeItem(STORAGE_KEYS.RECIPIENT);
   sessionStorage.removeItem(STORAGE_KEYS.UNREAD);
+  sessionStorage.clear();
+  localStorage.clear();
 }
 
 export function saveUsername(username) {

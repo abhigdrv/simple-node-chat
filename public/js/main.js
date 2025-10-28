@@ -22,6 +22,10 @@ const state = {
   unreadCounts: { group: 0, private: {} }
 };
 
+function handleSetUsername(){
+  setUsername();
+}
+
 // Load saved data
 window.addEventListener("DOMContentLoaded", () => {
   const savedData = loadFromStorage();
